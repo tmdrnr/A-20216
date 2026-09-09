@@ -9,7 +9,7 @@ import zoneinfo
 # 앱의 타이틀과 레이아웃을 넓게(wide) 설정합니다.
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="어제의 박스오피스",
+    page_title="일별 박스오피스",
     page_icon="🎬",
     layout="wide"
 )
@@ -39,19 +39,26 @@ def fetch_daily_boxoffice(target_date, api_key):
         return {"error": f"네트워크 통신 오류가 발생했습니다: {e}"}
 
 # -----------------------------------------------------------------------------
-# [날짜 계산]
+# [날짜 기준 계산 및 날짜 선택기(Calendar)]
 # 배포 서버의 시계가 해외 기준일 수 있으므로, 명확하게 한국 시간(Asia/Seoul)으로 계산합니다.
 # -----------------------------------------------------------------------------
 seoul_tz = zoneinfo.ZoneInfo("Asia/Seoul")
 now_seoul = datetime.now(seoul_tz)
-yesterday = now_seoul - timedelta(days=1)
-target_dt_str = yesterday.strftime("%Y%m%d") # YYYYMMDD 형식으로 변환
-formatted_date_display = yesterday.strftime("%Y년 %m월 %d일")
+max_date = (now_seoul - timedelta(days=1)).date() # 오늘 건 집계 전이므로 어제까지 선택 가능
 
-# -----------------------------------------------------------------------------
-# [메인 화면 레이아웃]
-# -----------------------------------------------------------------------------
-st.title("🎬 어제의 일별 박스오피스")
+st.title("🎬 일별 박스오피스")
+
+# 사이드바 또는 상단에 날짜 선택 달력 배치 (기본값: 어제)
+selected_date = st.date_input(
+    "조회할 날짜를 선택하세요",
+    value=max_date,
+    max_value=max_date
+)
+
+# API 조회용 날짜 문자열 (YYYYMMDD) 및 표시용 문자열 생성
+target_dt_str = selected_date.strftime("%Y%m%d")
+formatted_date_display = selected_date.strftime("%Y년 %m월 %d일")
+
 st.caption(f"기준일자: {formatted_date_display} (한국 시간 기준)")
 
 # Streamlit Secrets(비밀 금고)에서 KOBIS_KEY 불러오기
@@ -99,27 +106,47 @@ daily_list = boxoffice_result.get("dailyBoxOfficeList", [])
 
 # 영화 목록 데이터가 비어 있는 경우
 if not daily_list:
-    st.warning("⚠️ 어제 날짜의 박스오피스 데이터가 비어 있습니다.")
+    st.warning("⚠️ 그날은 아직 집계 전입니다.")
     st.info("""
     **확인해 주세요:**
-    - KOBIS API의 데이터 집계 시간이 연장되었거나 서버 점검 중일 수 있습니다.
-    - 잠시 후 다시 시도해 보세요.
+    - 선택하신 날짜의 박스오피스 데이터가 아직 집계되지 않았거나 서버 점검 중일 수 있습니다.
+    - 다른 날짜를 선택해 보시거나 잠시 후 다시 시도해 보세요.
     """)
     st.stop()
 
 # -----------------------------------------------------------------------------
 # [데이터 가공 (전처리)]
-# 문자열 형태의 숫자 데이터를 정수(int) 타입으로 변환합니다.
+# 문자열 형태의 숫자 데이터를 정수(int) 타입으로 변환하고 조건별 이모지를 추가합니다.
 # -----------------------------------------------------------------------------
 df = pd.DataFrame(daily_list)
 
 # 숫자로 변환할 컬럼 지정
-numeric_cols = ["rank", "audiCnt", "audiAcc", "scrnCnt"]
+numeric_cols = ["rank", "rankInten", "audiCnt", "audiAcc", "scrnCnt"]
 for col in numeric_cols:
     df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
 
 # 순위 기준으로 오름차순 정렬
 df = df.sort_values(by="rank", ascending=True)
+
+# 1) 순위 증감(rankInten) 화살표 표시 가공 함수
+def format_rank_change(inten):
+    if inten > 0:
+        return f"🔺 {inten}"  # 빨간 위 화살표 (상승)
+    elif inten < 0:
+        return f"🔹 {abs(inten)}"  # 파란 아래 화살표 (하락)
+    else:
+        return "-"  # 변동 없음
+
+df["rankChangeDisplay"] = df["rankInten"].apply(format_rank_change)
+
+# 2) 누적관객 100만 명 이상일 때 영화명 옆에 트로피(🏆) 붙이기
+def format_movie_title(row):
+    title = row["movieNm"]
+    if row["audiAcc"] >= 1_000_000:
+        return f"{title} 🏆"
+    return title
+
+df["displayMovieNm"] = df.apply(format_movie_title, axis=1)
 
 # -----------------------------------------------------------------------------
 # [1위 영화 지표 카드]
@@ -127,12 +154,12 @@ df = df.sort_values(by="rank", ascending=True)
 # -----------------------------------------------------------------------------
 top_1 = df.iloc[0]
 
-st.subheader(f"🥇 1위 영화: {top_1['movieNm']}")
+st.subheader(f"🥇 1위 영화: {top_1['displayMovieNm']}")
 
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric(
-        label="어제 관객수",
+        label="당일 관객수",
         value=f"{top_1['audiCnt']:,} 명"
     )
 with col2:
@@ -159,7 +186,7 @@ top_5_df = df.head(5)
 # Streamlit 내장 막대그래프 활용 (x: 영화명, y: 관객수)
 st.bar_chart(
     data=top_5_df,
-    x="movieNm",
+    x="displayMovieNm",
     y="audiCnt",
     color="#FF4B4B"
 )
@@ -173,8 +200,8 @@ st.divider()
 st.subheader("📋 전체 박스오피스 순위")
 
 # 화면에 보여줄 컬럼 선택 및 이름 변경
-display_df = df[["rank", "movieNm", "openDt", "audiCnt", "audiAcc", "scrnCnt"]].copy()
-display_df.columns = ["순위", "영화명", "개봉일", "관객수", "누적관객", "스크린수"]
+display_df = df[["rank", "rankChangeDisplay", "displayMovieNm", "openDt", "audiCnt", "audiAcc", "scrnCnt"]].copy()
+display_df.columns = ["순위", "순위변동", "영화명", "개봉일", "관객수", "누적관객", "스크린수"]
 
 st.dataframe(
     display_df,
