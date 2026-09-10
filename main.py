@@ -219,49 +219,48 @@ st.info("💡 **이 그래프로 알 수 있는 것:** 연중 어떤 월(성수�
 
 st.divider()
 
-# [구역 7] 캘린더 히트맵 (여섯 번째 그래프)
-st.subheader("🗓️ 6. 주차별 x 요일별 관객수 분포 (캘린더 히트맵)")
+# [구역 7] 캘린더 히트맵 (X축: 주차, Y축: 요일 - 반전 반영)
+st.subheader("🗓️ 6. 요일별 x 주차별 관객수 분포 (캘린더 히트맵)")
 
 # 1) 요일 및 주차, 날짜 텍스트 가공
 heatmap_df = daily_total.copy()
 heatmap_df['요일_num'] = heatmap_df['기준일자'].dt.dayofweek  # 0:월, 1:화 ... 6:일
-heatmap_df['요일'] = heatmap_df['기준일자'].dt.day_name()
 
-# 월요일~일요일 순서 정렬용 매핑
+# 월요일~일요일 매핑
 weekday_korean = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
 heatmap_df['요일_한글'] = heatmap_df['요일_num'].map(weekday_korean)
 
-# ISO 주차(ISO Week) 기준 주차/연도 생성
+# 주차 및 날짜 문자열 생성
 heatmap_df['주차'] = heatmap_df['기준일자'].dt.strftime('%Y-%U주차')
 heatmap_df['날짜_str'] = heatmap_df['기준일자'].dt.strftime('%Y-%m-%d')
 
-# 2) 요일 순서 고정 (월~일)
+# 2) 요일 순서 지정 (월~일)
 days_order = ['월', '화', '수', '목', '금', '토', '일']
 
-# 3) 피벗 테이블 생성 (행: 주차, 열: 요일)
-pivot_audi = heatmap_df.pivot(index='주차', columns='요일_한글', values='해당일관객수').reindex(columns=days_order)
-pivot_date = heatmap_df.pivot(index='주차', columns='요일_한글', values='날짜_str').reindex(columns=days_order)
+# 3) 피벗 테이블 생성 (행: 요일, 열: 주차 - X축과 Y축 교체)
+pivot_audi = heatmap_df.pivot(index='요일_한글', columns='주차', values='해당일관객수').reindex(index=days_order)
+pivot_date = heatmap_df.pivot(index='요일_한글', columns='주차', values='날짜_str').reindex(index=days_order)
 
-# 4) Plotly Heatmap 생성
+# 4) Plotly Heatmap 생성 (x: 주차, y: 요일)
 fig_heatmap = go.Figure(data=go.Heatmap(
     z=pivot_audi.values,
-    x=days_order,
-    y=pivot_audi.index,
+    x=pivot_audi.columns,  # X축: 주차
+    y=days_order,          # Y축: 요일 (월~일)
     customdata=pivot_date.values,
-    colorscale='Reds', # 관객이 많을수록 색이 진해지도록 설정
-    hovertemplate="<b>날짜: %{customdata}</b><br>요일: %{x}<br>일 관객수: %{z:,.0f}명<extra></extra>"
+    colorscale='Reds',     # 관객수가 많을수록 진한 색상
+    hovertemplate="<b>날짜: %{customdata}</b><br>주차: %{x}<br>요일: %{y}<br>일 관객수: %{z:,.0f}명<extra></extra>"
 ))
 
 fig_heatmap.update_layout(
-    title="주차별 x 요일별 일일 관객수 히트맵 (날짜 Hover 기능 제공)",
-    xaxis_title="요일",
-    yaxis_title="주차 (연도-주차)",
-    yaxis=dict(autorange="reversed") # 상단부터 최신/과거 순서대로 정렬
+    title="요일별 x 주차별 일일 관객수 히트맵 (날짜 Hover 기능 제공)",
+    xaxis_title="주차 (연도-주차)",
+    yaxis_title="요일",
+    yaxis=dict(autorange="reversed") # 위쪽부터 월요일 -> 일요일 순서로 정렬
 )
 
 st.plotly_chart(fig_heatmap, use_container_width=True)
 
-st.info("💡 **이 그래프로 알 수 있는 것:** 주말(토·일)과 평일(월~목) 간의 관객수 격차 패턴 및 특정 주차/공휴일에 관객수가 크게 몰린 지점을 직관적으로 확인할 수 있습니다.")
+st.info("💡 **이 그래프로 알 수 있는 것:** 주차 흐름(X축)에 따른 요일별(Y축) 관객수 패턴을 한눈에 파악할 수 있으며, 특정 주차의 주말 또는 공휴일에 관객 수가 진하게 몰린 지점을 쉽게 확인할 수 있습니다.")
 
 st.divider()
 
