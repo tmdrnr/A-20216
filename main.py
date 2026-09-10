@@ -62,8 +62,7 @@ selected_movie = st.sidebar.selectbox(
 filtered_df = df[df['영화명'] == selected_movie]
 
 # -----------------------------------------------------------------------------
-# [4. 선그래프 그리기 & 5. 기타 구역 배치]
-# 앞으로 다른 그래프나 요약 수치를 계속 추가할 수 있도록 메인 영역을 구역(Section)으로 나누어 배치합니다.
+# [4. 그래프 및 영역별 배치]
 # -----------------------------------------------------------------------------
 
 # [구역 1] 선택된 영화의 기본 정보 및 핵심 요약
@@ -76,10 +75,10 @@ st.metric(label="총 누적관객수", value=f"{max_acc_audi:,.0f} 명")
 st.divider()
 
 # [구역 2] 일별 관객수 변화 추이 선그래프
-st.subheader("📈 일별 관객수 변화 추이 (선그래프)")
+st.subheader("📈 1. 일별 관객수 변화 추이 (선그래프)")
 
 # Plotly Express를 활용한 선그래프 작성
-fig = px.line(
+fig_line = px.line(
     filtered_df,
     x='기준일자',
     y='해당일관객수',
@@ -88,25 +87,50 @@ fig = px.line(
     markers=True  # 그래프 선 위에 데이터 점 표시
 )
 
-# 그래프 레이아웃 정돈
-fig.update_layout(
+# 그래프 레이아웃 깔끔하게 조정
+fig_line.update_layout(
     xaxis_title="날짜",
     yaxis_title="관객수 (명)",
     hovermode="x unified"
 )
 
 # Streamlit 화면에 Plotly 그래프 출력
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig_line, use_container_width=True)
 
 # '이 그래프로 알 수 있는 것' 안내 문구 자리
 st.info(f"💡 **이 그래프로 알 수 있는 것:** {selected_movie}의 개봉 후 일자별 관객수 추이 및 최고 흥행 피크(Peak) 시점을 한눈에 파악할 수 있습니다.")
 
 st.divider()
 
-# [구역 3] 향후 그래프 추가를 위한 여분의 구역
-st.subheader("📊 추가 데이터 및 분석 구역")
-st.caption("앞으로 새로운 분석 그래프나 요약 표가 추가될 공간입니다.")
+# [구역 3] 누적 관객수 변화 추이 영역차트 (새로 추가된 그래프)
+st.subheader("🌊 2. 누적 관객수 변화 추이 (영역차트)")
 
-# 예시: 해당 영화의 상세 데이터 표 확인
+# Plotly Express를 활용한 영역차트(area chart) 작성
+fig_area = px.area(
+    filtered_df,
+    x='기준일자',
+    y='누적관객수',
+    title=f"[{selected_movie}] 기준일자별 누적 관객수 증가 추이",
+    labels={'기준일자': '날짜', '누적관객수': '누적 관객수 (명)'}
+)
+
+# 그래프 레이아웃 깔끔하게 조정
+fig_area.update_layout(
+    xaxis_title="날짜",
+    yaxis_title="누적 관객수 (명)",
+    hovermode="x unified"
+)
+
+# Streamlit 화면에 Plotly 영역차트 출력
+st.plotly_chart(fig_area, use_container_width=True)
+
+# '이 그래프로 알 수 있는 것' 안내 문구 자리
+st.info(f"💡 **이 그래프로 알 수 있는 것:** {selected_movie}의 관객수가 시간이 지남에 따라 얼마나 가파르게 누적 가중되는지, 흥행 지속성을 한눈에 확인할 수 있습니다.")
+
+st.divider()
+
+# [구역 4] 추가 분석 구역 및 데이터 표
+st.subheader("📊 상세 데이터 확인")
+
 with st.expander("📄 상세 데이터 표 확인하기"):
     st.dataframe(filtered_df, use_container_width=True)
