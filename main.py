@@ -120,22 +120,29 @@ st.info(f"💡 **이 그래프로 알 수 있는 것:** {selected_movie}의 관�
 
 st.divider()
 
-# [구역 4] 상위 5개 영화 누적관객수 비교 다중 선그래프 (새로 추가된 그래프)
-st.subheader("🏆 3. 상위 5개 영화 누적관객수 비교 (다중 선그래프)")
+# [구역 4] 조건 기반 상위 5개 영화 누적관객수 비교 다중 선그래프 (수정된 그래프)
+st.subheader("🏆 3. 장기 흥행 TOP 5 영화 누적관객수 비교 (다중 선그래프)")
 
-# 누적관객수 상위 5개 영화의 이름 추출
-top_5_movies = movie_rank.head(5).index.tolist()
+# 1) 영화별 TOP10 등장 일수 계산 (데이터프레임 내 행 수가 곧 등장 일수)
+days_in_top10 = df.groupby('영화명')['기준일자'].count()
 
-# 전체 데이터 중 상위 5개 영화의 데이터만 추출
-top_5_df = df[df['영화명'].isin(top_5_movies)]
+# 2) 20일 이상 등장한 영화 목록 필터링
+long_running_movies = days_in_top10[days_in_top10 >= 20].index
 
-# color="영화명" 옵션을 주어 영화별로 선 색상과 범례가 자동으로 나뉘도록 설정
+# 3) 조건에 맞는 영화 중 누적관객수 기준 상위 5개 선택
+filtered_movie_rank = movie_rank[movie_rank.index.isin(long_running_movies)]
+top_5_filtered_movies = filtered_movie_rank.head(5).index.tolist()
+
+# 4) 상위 5개 영화의 전체 일자별 데이터 필터링
+top_5_filtered_df = df[df['영화명'].isin(top_5_filtered_movies)]
+
+# 다중 선그래프 그리기
 fig_multi = px.line(
-    top_5_df,
+    top_5_filtered_df,
     x='기준일자',
     y='누적관객수',
     color='영화명',
-    title="누적관객수 TOP 5 영화의 일자별 누적 관객수 비교",
+    title="TOP10 20일 이상 유지 영화 중 누적관객수 TOP 5 추이 비교",
     labels={'기준일자': '날짜', '누적관객수': '누적 관객수 (명)', '영화명': '영화 제목'}
 )
 
@@ -143,12 +150,12 @@ fig_multi.update_layout(
     xaxis_title="날짜",
     yaxis_title="누적 관객수 (명)",
     hovermode="x unified",
-    legend_title_text="TOP 5 영화"
+    legend_title_text="장기 흥행 TOP 5"
 )
 
 st.plotly_chart(fig_multi, use_container_width=True)
 
-st.info("💡 **이 그래프로 알 수 있는 것:** 최상위 흥행작 5편의 관객수 누적 속도를 비교하여, 어떤 영화가 초반에 강세였는지 또는 장기 흥행에 성공했는지 상대적인 성과를 파악할 수 있습니다.")
+st.info("💡 **이 그래프로 알 수 있는 것:** 단기 반짝 흥행을 넘어 TOP 10 순위를 20일 이상 장기 유지한 주요 흥행작들의 누적 관객수 성장 속도와 장기 흥행 파워를 비교 분석할 수 있습니다.")
 
 st.divider()
 
