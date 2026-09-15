@@ -95,7 +95,6 @@ st.markdown("---")
 # -------------------------------------------------------------------
 st.subheader("3. 총 관객수 분포 히스토그램")
 
-# 히스토그램 생성
 fig3 = px.histogram(
     df,
     x="total_audi",
@@ -115,7 +114,6 @@ fig3.update_traces(
     hovertemplate="<b>구간:</b> %{x}명 근처<br><b>영화 수:</b> %{y}편<extra></extra>"
 )
 
-# 데이터에서 최고 관객 수 영화 탐지
 max_audi_idx = df["total_audi"].idxmax()
 top_movie_name = df.loc[max_audi_idx, "movieNm"]
 top_movie_audi = df.loc[max_audi_idx, "total_audi"]
@@ -126,6 +124,44 @@ st.info(
     f"💡 **이 그래프로 알 수 있는 것:** "
     f"대부분의 영화는 관객수가 100만~300만 명대 하위 구간에 몰려 있는 롱테일 분포 형태를 보이며, "
     f"가장 관객수가 많은 최상위 영화는 **'{top_movie_name}'**({top_movie_audi:,}명)입니다."
+)
+
+st.markdown("---")
+
+# -------------------------------------------------------------------
+# 그래프 4: 개봉일 스크린수와 총 관객수의 관계 (산점도)
+# -------------------------------------------------------------------
+st.subheader("4. 개봉일 스크린수 vs 총 관객수 산점도")
+
+fig4 = px.scatter(
+    df,
+    x="first_scrn",
+    y="total_audi",
+    color="genre",
+    hover_name="movieNm",
+    title="개봉일 스크린수와 총 관객수의 관계",
+    labels={
+        "first_scrn": "개봉일 스크린수 (개)",
+        "total_audi": "총 관객수 (명)",
+        "genre": "장르",
+    },
+    hover_data={"first_scrn": ":,d", "total_audi": ":,d"},
+)
+
+fig4.update_layout(
+    xaxis_title="개봉일 스크린수 (개)",
+    yaxis_title="총 관객수 (명)",
+)
+
+fig4.update_traces(
+    hovertemplate="<b>%{hovertext}</b><br>개봉일 스크린수: %{x:,}개<br>총 관객수: %{y:,}명<extra></extra>"
+)
+
+st.plotly_chart(fig4, use_container_width=True)
+
+st.info(
+    "💡 **이 그래프로 알 수 있는 것:** "
+    "초기 스크린 확보 수(초기 배급력)가 최종 총 관객수 확보에 미치는 상호 영향을 파악할 수 있으며, 적은 스크린으로 시작해 입소문으로 흥행한 아웃라이어 영화를 탐지할 수 있습니다."
 )
 
 st.markdown("---")
