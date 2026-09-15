@@ -65,3 +65,34 @@ st.info(
 )
 
 st.markdown("---")
+
+# -------------------------------------------------------------------
+# 그래프 2: 장르 및 영화별 총 관객수 (트리맵)
+# -------------------------------------------------------------------
+st.subheader("2. 장르 및 개별 영화별 총 관객수 분포")
+
+# Plotly 트리맵 생성 (계층: 장르 -> 영화명, 크기: 총 관객수)
+fig2 = px.treemap(
+    df,
+    path=[px.Constant("전체 장르"), "genre", "movieNm"],
+    values="total_audi",
+    title="장르 및 영화별 총 관객수 (칸 크기 = 총 관객수)",
+    color="genre",
+    hover_data={"total_audi": ":,d"},
+)
+
+# 호버 마우스 툴팁 설정 (영화명과 총 관객수가 쉼표 포맷으로 보이도록 설정)
+fig2.update_traces(
+    hovertemplate="<b>%{label}</b><br>총 관객수: %{value:,}명<extra></extra>"
+)
+
+# 그래프 출력
+st.plotly_chart(fig2, use_container_width=True)
+
+# 구역 구분 및 해석 문장
+st.info(
+    "💡 **이 그래프로 알 수 있는 것:** "
+    "장르 내에서 특정 흥행 대작이 전체 관객수를 독식하고 있는지, 아니면 여러 영화가 고르게 관객을 모았는지 흥행 집중도를 시각적으로 파악할 수 있습니다."
+)
+
+st.markdown("---")
