@@ -49,16 +49,13 @@ fig1 = px.pie(
     hover_data=["count"],
 )
 
-# 호버 마우스 툴팁 및 텍스트 표시 설정 (편수와 비율 표시)
 fig1.update_traces(
     textinfo="percent+label",
     hovertemplate="<b>장르:</b> %{label}<br><b>편수:</b> %{value}편<br><b>비율:</b> %{percent}",
 )
 
-# 그래프 출력
 st.plotly_chart(fig1, use_container_width=True)
 
-# 구역 구분 및 해석 문장
 st.info(
     "💡 **이 그래프로 알 수 있는 것:** "
     "박스오피스 상위권 영화 중 특정 주요 장르가 차지하는 비중과 전체 장르 분포의 다변화 정도를 한눈에 파악할 수 있습니다."
@@ -71,7 +68,6 @@ st.markdown("---")
 # -------------------------------------------------------------------
 st.subheader("2. 장르 및 개별 영화별 총 관객수 분포")
 
-# Plotly 트리맵 생성 (계층: 장르 -> 영화명, 크기: 총 관객수)
 fig2 = px.treemap(
     df,
     path=[px.Constant("전체 장르"), "genre", "movieNm"],
@@ -81,18 +77,55 @@ fig2 = px.treemap(
     hover_data={"total_audi": ":,d"},
 )
 
-# 호버 마우스 툴팁 설정 (영화명과 총 관객수가 쉼표 포맷으로 보이도록 설정)
 fig2.update_traces(
     hovertemplate="<b>%{label}</b><br>총 관객수: %{value:,}명<extra></extra>"
 )
 
-# 그래프 출력
 st.plotly_chart(fig2, use_container_width=True)
 
-# 구역 구분 및 해석 문장
 st.info(
     "💡 **이 그래프로 알 수 있는 것:** "
     "장르 내에서 특정 흥행 대작이 전체 관객수를 독식하고 있는지, 아니면 여러 영화가 고르게 관객을 모았는지 흥행 집중도를 시각적으로 파악할 수 있습니다."
+)
+
+st.markdown("---")
+
+# -------------------------------------------------------------------
+# 그래프 3: 총 관객수 분포 (히스토그램)
+# -------------------------------------------------------------------
+st.subheader("3. 총 관객수 분포 히스토그램")
+
+# 히스토그램 생성
+fig3 = px.histogram(
+    df,
+    x="total_audi",
+    nbins=25,
+    title="총 관객수 구간별 영화 편수 분포",
+    labels={"total_audi": "총 관객수"},
+    hover_data=["movieNm"],
+)
+
+fig3.update_layout(
+    xaxis_title="총 관객수 (명)",
+    yaxis_title="영화 편수 (개)",
+    bargap=0.1,
+)
+
+fig3.update_traces(
+    hovertemplate="<b>구간:</b> %{x}명 근처<br><b>영화 수:</b> %{y}편<extra></extra>"
+)
+
+# 데이터에서 최고 관객 수 영화 탐지
+max_audi_idx = df["total_audi"].idxmax()
+top_movie_name = df.loc[max_audi_idx, "movieNm"]
+top_movie_audi = df.loc[max_audi_idx, "total_audi"]
+
+st.plotly_chart(fig3, use_container_width=True)
+
+st.info(
+    f"💡 **이 그래프로 알 수 있는 것:** "
+    f"대부분의 영화는 관객수가 100만~300만 명대 하위 구간에 몰려 있는 롱테일 분포 형태를 보이며, "
+    f"가장 관객수가 많은 최상위 영화는 **'{top_movie_name}'**({top_movie_audi:,}명)입니다."
 )
 
 st.markdown("---")
