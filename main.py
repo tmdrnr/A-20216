@@ -25,6 +25,10 @@ def load_data():
         df["genre"].astype(str).apply(lambda x: x.split("|")[0].strip())
     )
 
+    # 9번째 그래프용 전처리: 첫 주 관객 대비 총 관객 배수 (뒷심 지표)
+    # 0 나누기 방지를 위해 first_week_audi가 0인 경우 처리
+    df["multiplier"] = (df["total_audi"] / df["first_week_audi"]).round(2)
+
     return df
 
 
@@ -319,6 +323,55 @@ st.plotly_chart(fig8, use_container_width=True)
 st.info(
     "💡 **이 그래프로 알 수 있는 것:** "
     "상위권(TOP 10)에 오래 체류하는 장기 흥행(롱런) 성향과 최종 누적 관객수 사이의 강한 양의 상관관계를 확인할 수 있습니다."
+)
+
+st.markdown("---")
+
+# -------------------------------------------------------------------
+# 그래프 9: 첫 주 흥행 성적과 최종 관객수 및 뒷심 분석 (산점도)
+# -------------------------------------------------------------------
+st.subheader("9. 첫 주 흥행 성적이 최종 흥행을 얼마나 결정할까?")
+
+fig9 = px.scatter(
+    df,
+    x="first_week_audi",
+    y="total_audi",
+    color="genre",
+    hover_name="movieNm",
+    title="첫 주 흥행 성적이 최종 흥행을 얼마나 결정할까?",
+    labels={
+        "first_week_audi": "개봉 첫 주 관객수 (명)",
+        "total_audi": "총 관객수 (명)",
+        "genre": "장르",
+        "multiplier": "첫 주 대비 최종 관객 배수",
+    },
+    hover_data={
+        "first_week_audi": ":,d",
+        "total_audi": ":,d",
+        "multiplier": ":.2f",
+    },
+)
+
+fig9.update_layout(
+    xaxis_title="개봉 첫 주 관객수 (명)",
+    yaxis_title="총 관객수 (명)",
+)
+
+fig9.update_traces(
+    hovertemplate=(
+        "<b>%{hovertext}</b><br>"
+        "첫 주 관객수: %{x:,}명<br>"
+        "총 관객수: %{y:,}명<br>"
+        "최종 흥행 배수(뒷심): %{customdata[2]:.2f}배<extra></extra>"
+    )
+)
+
+st.plotly_chart(fig9, use_container_width=True)
+
+st.info(
+    "💡 **이 그래프로 알 수 있는 것:** "
+    "개봉 첫 주 관객수와 최종 관객수는 매우 직관적인 선형 관계를 보이지만, "
+    "마우스를 올렸을 때 보이는 '최종 흥행 배수'를 통해 첫 주 흥행 이후에도 입소문이나 장기 상영으로 강력한 뒷심을 발휘한 역주행 작품들을 찾아낼 수 있습니다."
 )
 
 st.markdown("---")
