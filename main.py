@@ -259,3 +259,29 @@ st.info(
 )
 
 st.markdown("---")
+
+# -------------------------------------------------------------------
+# 그래프 7: 제작 국가 -> 장르 선버스트 차트
+# -------------------------------------------------------------------
+st.subheader("7. 제작 국가 및 장르별 영화 편수 (선버스트 차트)")
+
+# 국가 -> 장르 계층 구조 선버스트 생성 (크기 = 편수)
+fig7 = px.sunburst(
+    df,
+    path=["nation", "genre"],
+    title="제작 국가 및 장르 계층별 영화 편수 분포",
+)
+
+fig7.update_traces(
+    textinfo="label+value",
+    hovertemplate="<b>%{label}</b><br>영화 편수: %{value}편<extra></extra>",
+)
+
+st.plotly_chart(fig7, use_container_width=True)
+
+st.info(
+    "💡 **이 그래프로 알 수 있는 것:** "
+    "제작 국가별(한국, 미국 등)로 주로 수입되거나 제작되는 선호 장르의 구성을 계층적으로 한눈에 비교하고 파악할 수 있습니다."
+)
+
+st.markdown("---")
