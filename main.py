@@ -265,6 +265,7 @@ st.markdown("---")
 # -------------------------------------------------------------------
 st.subheader("7. 제작 국가 및 장르별 영화 편수 (선버스트 차트)")
 
+# 국가 -> 장르 계층 구조 선버스트 생성 (크기 = 편수)
 fig7 = px.sunburst(
     df,
     path=["nation", "genre"],
@@ -281,44 +282,6 @@ st.plotly_chart(fig7, use_container_width=True)
 st.info(
     "💡 **이 그래프로 알 수 있는 것:** "
     "제작 국가별(한국, 미국 등)로 주로 수입되거나 제작되는 선호 장르의 구성을 계층적으로 한눈에 비교하고 파악할 수 있습니다."
-)
-
-st.markdown("---")
-
-# -------------------------------------------------------------------
-# 그래프 8: 10위권 체류 날수 vs 총 관객수 (산점도)
-# -------------------------------------------------------------------
-st.subheader("8. 10위권 체류 날수와 총 관객수의 관계")
-
-fig8 = px.scatter(
-    df,
-    x="days_in_top10",
-    y="total_audi",
-    color="genre",
-    hover_name="movieNm",
-    title="10위권에 오래 머문 영화는 총 관객도 많은가",
-    labels={
-        "days_in_top10": "10위권에 머문 날수 (일)",
-        "total_audi": "총 관객수 (명)",
-        "genre": "장르",
-    },
-    hover_data={"days_in_top10": ":d", "total_audi": ":,d"},
-)
-
-fig8.update_layout(
-    xaxis_title="10위권에 머문 날수 (일)",
-    yaxis_title="총 관객수 (명)",
-)
-
-fig8.update_traces(
-    hovertemplate="<b>%{hovertext}</b><br>10위권 체류 날수: %{x}일<br>총 관객수: %{y:,}명<extra></extra>"
-)
-
-st.plotly_chart(fig8, use_container_width=True)
-
-st.info(
-    "💡 **이 그래프로 알 수 있는 것:** "
-    "박스오피스 상위권(TOP 10)에 오래 체류할수록 총 관객수가 뚜렷한 양의 상관관계를 나타내어, 차트 장기 집권(롱런)이 최종 관객수 확보의 핵심 요인임을 파악할 수 있습니다."
 )
 
 st.markdown("---")
